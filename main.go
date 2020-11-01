@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"github.com/tadeuszjt/geom/32"
 	"github.com/tadeuszjt/gfx"
+	"github.com/go-gl/glfw/v3.2/glfw"
 	"os"
 )
 
@@ -12,6 +13,9 @@ var (
 )
 
 func setup(w *gfx.Win) error {
+    w.GetGlfwWindow().SetCharCallback(charCallback)
+
+
 	f, err := os.Open("text")
 	if err != nil {
 		return err
@@ -28,6 +32,26 @@ func setup(w *gfx.Win) error {
 	return nil
 }
 
+func charCallback(w *glfw.Window, r rune) {
+    text.InsertChar(r)
+}
+
+func keyboard(w *gfx.Win, ev gfx.KeyEvent) {
+    if ev.Action == glfw.Press || ev.Action == glfw.Repeat {
+        switch ev.Key {
+        case glfw.KeyEnter:
+            text.Enter()
+        case glfw.KeyBackspace:
+            text.Backspace()
+        case glfw.KeyTab:
+            text.InsertChar(' ')
+            text.InsertChar(' ')
+            text.InsertChar(' ')
+            text.InsertChar(' ')
+        }
+    }
+}
+
 func resize(w *gfx.Win, width, height int) {
     text.Resize(w, geom.RectOrigin(float32(width), float32(height)))
 }
@@ -42,6 +66,7 @@ func main() {
 		SetupFunc: setup,
 		DrawFunc:  draw,
         ResizeFunc: resize,
+        KeyFunc:   keyboard,
 		Title:     "Text",
 		Resizable: true,
 	})
