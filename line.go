@@ -5,10 +5,10 @@ import (
 )
 
 type TextChunk struct {
-    Colour gfx.Colour
-    Str    string
+	Colour gfx.Colour
+	Str    string
 }
 
 type Line struct {
-    Chunks []TextChunk
+	Chunks []TextChunk
 }
