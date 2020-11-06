@@ -10,6 +10,7 @@ import (
 
 var (
 	text *TextWindow
+    cmd  *TextWindow
 )
 
 func setup(w *gfx.Win) error {
@@ -32,29 +33,29 @@ func setup(w *gfx.Win) error {
 }
 
 func charCallback(w *glfw.Window, r rune) {
-	text.InsertChar(r)
+    TextBufferInsertChar(text, r)
 }
 
 func keyboard(w *gfx.Win, ev gfx.KeyEvent) {
 	if ev.Action == glfw.Press || ev.Action == glfw.Repeat {
 		switch ev.Key {
 		case glfw.KeyEnter:
-			text.Enter()
+            TextBufferEnter(text)
 		case glfw.KeyBackspace:
-			text.Backspace()
+            TextBufferBackspace(text)
 		case glfw.KeyTab:
-			text.InsertChar(' ')
-			text.InsertChar(' ')
-			text.InsertChar(' ')
-			text.InsertChar(' ')
+            TextBufferInsertChar(text, ' ')
+            TextBufferInsertChar(text, ' ')
+            TextBufferInsertChar(text, ' ')
+            TextBufferInsertChar(text, ' ')
 		case glfw.KeyUp:
-			text.MoveCursorUp()
+            TextBufferMoveCursor(text, -1, 0)
 		case glfw.KeyDown:
-			text.MoveCursorDown()
+            TextBufferMoveCursor(text, 1, 0)
 		case glfw.KeyLeft:
-			text.MoveCursorLeft()
+            TextBufferMoveCursor(text, 0, -1)
 		case glfw.KeyRight:
-			text.MoveCursorRight()
+            TextBufferMoveCursor(text, 0, 1)
 		}
 	}
 }

@@ -16,6 +16,7 @@ type TextWindow struct {
 	windowTex  gfx.TexID
 }
 
+
 func NewTextWindow(w *gfx.Win, rect geom.Rect) *TextWindow {
 	return &TextWindow{
 		rect:      rect,
@@ -27,6 +28,24 @@ func NewTextWindow(w *gfx.Win, rect geom.Rect) *TextWindow {
 
 func (t *TextWindow) curLine() *gfx.Text {
 	return &t.lines[t.cursorLine]
+}
+
+func (t *TextWindow) GetLine(idx int) string {
+    return t.lines[idx].GetString()
+}
+
+func (t *TextWindow) SetLine(idx int, str string) {
+    t.lines[idx].SetString(str)
+    
+}
+
+func (t *TextWindow) GetCursor() (line int, char int) {
+    return t.cursorLine, t.cursorChar
+}
+
+func (t *TextWindow) SetCursor(line, char int) {
+    t.cursorChar = char
+    t.cursorLine = line
 }
 
 func (t *TextWindow) InsertLine(lindIdx int, str string) {
@@ -44,6 +63,10 @@ func (t *TextWindow) InsertLine(lindIdx int, str string) {
 	t.lines[lindIdx] = text
 }
 
+func (t *TextWindow) NumLines() int {
+    return len(t.lines)
+}
+
 func (t *TextWindow) RemoveLine(lindIdx int) {
 	if lindIdx < 0 || lindIdx >= len(t.lines) {
 		panic("")
@@ -51,76 +74,6 @@ func (t *TextWindow) RemoveLine(lindIdx int) {
 	t.lines = append(t.lines[:lindIdx], t.lines[lindIdx+1:]...)
 }
 
-func (t *TextWindow) Enter() {
-	line := t.cursorLine
-	char := t.cursorChar
-	str := t.curLine().GetString()
-	t.curLine().SetString(str[:char])
-	t.InsertLine(line+1, str[char:])
-	t.cursorLine++
-	t.cursorChar = 0
-}
-
-func (t *TextWindow) Backspace() {
-	if t.cursorChar == 0 {
-		if t.cursorLine > 0 {
-			prevStr := t.lines[t.cursorLine-1].GetString()
-			curStr := t.lines[t.cursorLine].GetString()
-
-			t.lines[t.cursorLine-1].SetString(prevStr + curStr)
-			t.cursorChar = len(prevStr)
-			t.RemoveLine(t.cursorLine)
-			t.cursorLine--
-		}
-		return
-	}
-
-	str := t.curLine().GetString()
-	t.curLine().SetString(str[:t.cursorChar-1] + str[t.cursorChar:])
-	t.cursorChar--
-}
-
-func (t *TextWindow) InsertChar(r rune) {
-	str := t.curLine().GetString()
-	t.curLine().SetString(str[:t.cursorChar] + string(r) + str[t.cursorChar:])
-	t.cursorChar++
-}
-
-func (t *TextWindow) MoveCursorUp() {
-	if t.cursorLine <= 0 {
-		return
-	}
-	prevStr := t.lines[t.cursorLine-1].GetString()
-	if len(prevStr) < t.cursorChar {
-		t.cursorChar = len(prevStr)
-	}
-	t.cursorLine--
-}
-
-func (t *TextWindow) MoveCursorDown() {
-	if t.cursorLine >= len(t.lines)-1 {
-		return
-	}
-	nextStr := t.lines[t.cursorLine+1].GetString()
-	if len(nextStr) < t.cursorChar {
-		t.cursorChar = len(nextStr)
-	}
-	t.cursorLine++
-}
-
-func (t *TextWindow) MoveCursorLeft() {
-	if t.cursorChar <= 0 {
-		return
-	}
-	t.cursorChar--
-}
-
-func (t *TextWindow) MoveCursorRight() {
-	if t.cursorChar >= len(t.lines[t.cursorLine].GetString())-1 {
-		return
-	}
-	t.cursorChar++
-}
 
 func (t *TextWindow) Redraw(w *gfx.Win) {
 	texCanvas := w.GetTextureCanvas(t.windowTex)
