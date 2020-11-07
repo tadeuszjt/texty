@@ -34,7 +34,6 @@ func TextBufferBackspace(buf TextBuffer) {
 
     buf.SetLine(cl, line[:cc-1] + line[cc:])
     buf.SetCursor(cl, cc-1)
-
 }
 
 func TextBufferInsertChar(buf TextBuffer, r rune) {

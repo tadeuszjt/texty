@@ -11,6 +11,7 @@ import (
 var (
 	text *TextWindow
     cmd  *TextWindow
+    currentWindow *TextWindow
 )
 
 func setup(w *gfx.Win) error {
@@ -22,7 +23,7 @@ func setup(w *gfx.Win) error {
 	}
 
 	text = NewTextWindow(w, geom.RectOrigin(400, 400))
-	text.Resize(w, geom.RectOrigin(600, 600))
+    currentWindow = text
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
@@ -33,40 +34,86 @@ func setup(w *gfx.Win) error {
 }
 
 func charCallback(w *glfw.Window, r rune) {
-    TextBufferInsertChar(text, r)
+    switch r {
+    case ';':
+    default:
+        TextBufferInsertChar(currentWindow, r)
+    }
 }
 
 func keyboard(w *gfx.Win, ev gfx.KeyEvent) {
 	if ev.Action == glfw.Press || ev.Action == glfw.Repeat {
 		switch ev.Key {
 		case glfw.KeyEnter:
-            TextBufferEnter(text)
+            TextBufferEnter(currentWindow)
 		case glfw.KeyBackspace:
-            TextBufferBackspace(text)
+            TextBufferBackspace(currentWindow)
 		case glfw.KeyTab:
-            TextBufferInsertChar(text, ' ')
-            TextBufferInsertChar(text, ' ')
-            TextBufferInsertChar(text, ' ')
-            TextBufferInsertChar(text, ' ')
+            TextBufferInsertChar(currentWindow, ' ')
+            TextBufferInsertChar(currentWindow, ' ')
+            TextBufferInsertChar(currentWindow, ' ')
+            TextBufferInsertChar(currentWindow, ' ')
 		case glfw.KeyUp:
-            TextBufferMoveCursor(text, -1, 0)
+            TextBufferMoveCursor(currentWindow, -1, 0)
 		case glfw.KeyDown:
-            TextBufferMoveCursor(text, 1, 0)
+            TextBufferMoveCursor(currentWindow, 1, 0)
 		case glfw.KeyLeft:
-            TextBufferMoveCursor(text, 0, -1)
+            TextBufferMoveCursor(currentWindow, 0, -1)
 		case glfw.KeyRight:
-            TextBufferMoveCursor(text, 0, 1)
+            TextBufferMoveCursor(currentWindow, 0, 1)
+        case glfw.KeySemicolon:
+            rect := w.GetFrameRect()
+            if cmd == nil {
+                cmd = NewTextWindow(w, geom.MakeRect(0, rect.Height() - 100., rect.Width(), 100.))
+                resize(w, int(rect.Width()), int(rect.Height()))
+                currentWindow = cmd
+            } else {
+                cmd.Free(w)
+                cmd = nil
+                resize(w, int(rect.Width()), int(rect.Height()))
+                currentWindow = text
+            }
 		}
 	}
 }
 
 func resize(w *gfx.Win, width, height int) {
 	text.Resize(w, geom.RectOrigin(float32(width), float32(height)))
+
+    if cmd != nil {
+        text.Resize(w, geom.MakeRect(
+            0,
+            0,
+            float32(width),
+            float32(height) - 100.,
+        ))
+
+        cmd.Resize(w, geom.MakeRect(
+            0,
+            float32(height) - 100.,
+            float32(width),
+            100.,
+        ))
+
+        return
+    }
+
+    text.Resize(w, geom.MakeRect(
+        0,
+        0,
+        float32(width),
+        float32(height),
+    ))
 }
 
 func draw(w *gfx.Win, c gfx.Canvas) {
-	text.Redraw(w)
-	text.DrawOn(c, geom.Vec2{})
+    text.Redraw(w)
+    text.DrawOn(c)
+
+    if cmd != nil {
+        cmd.Redraw(w)
+        cmd.DrawOn(c)
+    }
 }
 
 func main() {

@@ -16,14 +16,23 @@ type TextWindow struct {
 	windowTex  gfx.TexID
 }
 
-
 func NewTextWindow(w *gfx.Win, rect geom.Rect) *TextWindow {
-	return &TextWindow{
+    tw := &TextWindow{
 		rect:      rect,
 		tabSize:   4,
 		textSize:  13,
 		windowTex: w.LoadTextureBlank(int(rect.Width()), int(rect.Height())),
 	}
+    tw.AddLine("")
+    return tw
+}
+
+func (t *TextWindow) Free(w *gfx.Win) {
+    w.FreeTexture(t.windowTex)
+    for i := range t.lines {
+        t.lines[i].Free(w)
+    }
+    t.lines = []gfx.Text{}
 }
 
 func (t *TextWindow) curLine() *gfx.Text {
@@ -106,7 +115,7 @@ func (t *TextWindow) Resize(w *gfx.Win, rect geom.Rect) {
 	t.windowTex = w.LoadTextureBlank(int(rect.Width()), int(rect.Height()))
 }
 
-func (t *TextWindow) DrawOn(c gfx.Canvas, pos geom.Vec2) {
+func (t *TextWindow) DrawOn(c gfx.Canvas) {
 	gfx.DrawRect(c, &t.windowTex, t.rect, geom.RectOrigin(1, 1))
 }
 
