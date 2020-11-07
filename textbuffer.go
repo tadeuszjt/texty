@@ -10,6 +10,24 @@ type TextBuffer interface {
     NumLines() int
 }
 
+func TextBufferString(buf TextBuffer) (s string) {
+    for i := 0; i < buf.NumLines(); i++ {
+        s = s + buf.GetLine(i) + "\n"
+    }
+    return
+}
+
+func TextBufferClear(buf TextBuffer) {
+    for i := buf.NumLines() - 1; i > 0; i-- {
+        buf.RemoveLine(i)
+    }
+    buf.SetLine(0, "")
+}
+
+func TextBufferAppend(buf TextBuffer, str string) {
+    buf.InsertLine(buf.NumLines(), str)
+}
+
 func TextBufferEnter(buf TextBuffer) {
     cl, cc := buf.GetCursor()
     line := buf.GetLine(cl)

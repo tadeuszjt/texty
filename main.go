@@ -1,11 +1,13 @@
 package main
 
 import (
-	"bufio"
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/tadeuszjt/geom/32"
 	"github.com/tadeuszjt/gfx"
-	"os"
+    "os"
+    "fmt"
+    "bufio"
+    "strings"
 )
 
 var (
@@ -16,20 +18,8 @@ var (
 
 func setup(w *gfx.Win) error {
 	w.GetGlfwWindow().SetCharCallback(charCallback)
-
-	f, err := os.Open("text")
-	if err != nil {
-		return err
-	}
-
-	text = NewTextWindow(w, geom.RectOrigin(400, 400))
+	text = NewTextWindow(w, w.GetFrameRect())
     currentWindow = text
-
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		text.AddLine(scanner.Text())
-	}
-
 	return nil
 }
 
@@ -41,11 +31,68 @@ func charCallback(w *glfw.Window, r rune) {
     }
 }
 
+func cmdStr(str string) error {
+    words := strings.Split(str, " ")
+    if len(words) <= 0 {
+        return fmt.Errorf("invalid cmd")
+    }
+
+    switch words[0] {
+    case "save": {
+            if len(words) > 2 {
+                return fmt.Errorf("invalid cmd")
+            }
+
+            f, err := os.Create(words[1])
+            if err != nil {
+                return err
+            }
+
+            _, err = f.WriteString(TextBufferString(text))
+            if err != nil {
+                return err
+            }
+        }
+    case "open": {
+            if len(words) > 2 {
+                return fmt.Errorf("invalid cmd")
+            }
+            f, err := os.Open(words[1])
+            if err != nil {
+                return err
+            }
+
+            TextBufferClear(text)
+            scanner := bufio.NewScanner(f)
+            for scanner.Scan() {
+                TextBufferAppend(text, scanner.Text())
+            }
+        }
+    
+    }
+
+
+    return nil
+}
+
 func keyboard(w *gfx.Win, ev gfx.KeyEvent) {
 	if ev.Action == glfw.Press || ev.Action == glfw.Repeat {
 		switch ev.Key {
 		case glfw.KeyEnter:
-            TextBufferEnter(currentWindow)
+            if currentWindow == cmd {
+                str := cmd.GetLine(0)
+                err := cmdStr(str)
+                if err != nil {
+                    fmt.Println(err)
+                }
+
+                cmd.Free(w)
+                cmd = nil 
+                currentWindow = text
+                resize(w)
+            } else {
+                TextBufferEnter(currentWindow)
+            }
 		case glfw.KeyBackspace:
             TextBufferBackspace(currentWindow)
 		case glfw.KeyTab:
@@ -65,45 +112,28 @@ func keyboard(w *gfx.Win, ev gfx.KeyEvent) {
             rect := w.GetFrameRect()
             if cmd == nil {
                 cmd = NewTextWindow(w, geom.MakeRect(0, rect.Height() - 100., rect.Width(), 100.))
-                resize(w, int(rect.Width()), int(rect.Height()))
+                resize(w)
                 currentWindow = cmd
             } else {
                 cmd.Free(w)
                 cmd = nil
-                resize(w, int(rect.Width()), int(rect.Height()))
+                resize(w)
                 currentWindow = text
             }
 		}
 	}
 }
 
-func resize(w *gfx.Win, width, height int) {
-	text.Resize(w, geom.RectOrigin(float32(width), float32(height)))
+func resize(w *gfx.Win) {
+    rect := w.GetFrameRect()
 
     if cmd != nil {
-        text.Resize(w, geom.MakeRect(
-            0,
-            0,
-            float32(width),
-            float32(height) - 100.,
-        ))
-
-        cmd.Resize(w, geom.MakeRect(
-            0,
-            float32(height) - 100.,
-            float32(width),
-            100.,
-        ))
-
+        text.Resize(w, geom.MakeRect(0, 0, rect.Width(), rect.Height() - 100.))
+        cmd.Resize(w, geom.MakeRect(0, rect.Height() - 100., rect.Width(), 100.))
         return
     }
 
-    text.Resize(w, geom.MakeRect(
-        0,
-        0,
-        float32(width),
-        float32(height),
-    ))
+    text.Resize(w, rect)
 }
 
 func draw(w *gfx.Win, c gfx.Canvas) {
