@@ -1,84 +1,84 @@
 package main
 
 type TextBuffer interface {
-    GetLine(idx int) string
-    SetLine(idx int, str string)
-    InsertLine(idx int, str string)
-    RemoveLine(idx int)
-    GetCursor() (line int, char int)
-    SetCursor(line, char int)
-    NumLines() int
+	GetLine(idx int) string
+	SetLine(idx int, str string)
+	InsertLine(idx int, str string)
+	RemoveLine(idx int)
+	GetCursor() (line int, char int)
+	SetCursor(line, char int)
+	NumLines() int
 }
 
 func TextBufferString(buf TextBuffer) (s string) {
-    for i := 0; i < buf.NumLines(); i++ {
-        s = s + buf.GetLine(i) + "\n"
-    }
-    return
+	for i := 0; i < buf.NumLines(); i++ {
+		s = s + buf.GetLine(i) + "\n"
+	}
+	return
 }
 
 func TextBufferClear(buf TextBuffer) {
-    for i := buf.NumLines() - 1; i > 0; i-- {
-        buf.RemoveLine(i)
-    }
-    buf.SetLine(0, "")
+	for i := buf.NumLines() - 1; i > 0; i-- {
+		buf.RemoveLine(i)
+	}
+	buf.SetLine(0, "")
 }
 
 func TextBufferAppend(buf TextBuffer, str string) {
-    buf.InsertLine(buf.NumLines(), str)
+	buf.InsertLine(buf.NumLines(), str)
 }
 
 func TextBufferEnter(buf TextBuffer) {
-    cl, cc := buf.GetCursor()
-    line := buf.GetLine(cl)
-    buf.SetLine(cl, line[:cc])
-    buf.InsertLine(cl+1, line[cc:])
-    buf.SetCursor(cl+1, 0)
+	cl, cc := buf.GetCursor()
+	line := buf.GetLine(cl)
+	buf.SetLine(cl, line[:cc])
+	buf.InsertLine(cl+1, line[cc:])
+	buf.SetCursor(cl+1, 0)
 }
 
 func TextBufferBackspace(buf TextBuffer) {
-    cl, cc := buf.GetCursor()
-    line   := buf.GetLine(cl)
+	cl, cc := buf.GetCursor()
+	line := buf.GetLine(cl)
 
-    if cc <= 0 {
-        if cl > 0 {
-            prev := buf.GetLine(cl-1)
-            buf.SetLine(cl-1, prev + line[cc:])
-            buf.SetCursor(cl-1, len(prev))
-            buf.RemoveLine(cl)
-        }
-        return
-    }
+	if cc <= 0 {
+		if cl > 0 {
+			prev := buf.GetLine(cl - 1)
+			buf.SetLine(cl-1, prev+line[cc:])
+			buf.SetCursor(cl-1, len(prev))
+			buf.RemoveLine(cl)
+		}
+		return
+	}
 
-    buf.SetLine(cl, line[:cc-1] + line[cc:])
-    buf.SetCursor(cl, cc-1)
+	buf.SetLine(cl, line[:cc-1]+line[cc:])
+	buf.SetCursor(cl, cc-1)
 }
 
 func TextBufferInsertChar(buf TextBuffer, r rune) {
-    cl, cc := buf.GetCursor()
-    line := buf.GetLine(cl)
-    buf.SetLine(cl, line[:cc] + string(r) + line[cc:])
-    buf.SetCursor(cl, cc + 1)
+	cl, cc := buf.GetCursor()
+	line := buf.GetLine(cl)
+	buf.SetLine(cl, line[:cc]+string(r)+line[cc:])
+	buf.SetCursor(cl, cc+1)
 }
 
 func TextBufferMoveCursor(buf TextBuffer, DLine, DChar int) {
-    cl, cc := buf.GetCursor()
-    nl := buf.NumLines()
+	cl, cc := buf.GetCursor()
+	nl := buf.NumLines()
 
-    cln := cl + DLine
-    if cln < 0 {
-        cln = 0
-    } else if cln >= nl {
-        cln = nl-1
-    }
+	cln := cl + DLine
+	if cln < 0 {
+		cln = 0
+	} else if cln >= nl {
+		cln = nl - 1
+	}
 
-    ccn := cc + DChar
-    line := buf.GetLine(cln)
-    if ccn < 0 {
-        ccn = 0
-    } else if ccn > len(line) {
-        ccn = len(line)
-    }
+	ccn := cc + DChar
+	line := buf.GetLine(cln)
+	if ccn < 0 {
+		ccn = 0
+	} else if ccn > len(line) {
+		ccn = len(line)
+	}
 
-    buf.SetCursor(cln, ccn)
+	buf.SetCursor(cln, ccn)
 }

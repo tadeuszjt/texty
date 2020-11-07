@@ -5,6 +5,6 @@ import (
 )
 
 type WindowElement interface {
-    GetRect() geom.Rect
-    SetRect(geom.Rect)
+	GetRect() geom.Rect
+	SetRect(geom.Rect)
 }
