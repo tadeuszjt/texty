@@ -7,6 +7,7 @@ type TextBuffer interface {
 	RemoveLine(idx int)
 	GetCursor() (line int, char int)
 	SetCursor(line, char int)
+	GetTabSize() int
 	NumLines() int
 }
 
@@ -62,23 +63,49 @@ func TextBufferInsertChar(buf TextBuffer, r rune) {
 }
 
 func TextBufferMoveCursor(buf TextBuffer, DLine, DChar int) {
-	cl, cc := buf.GetCursor()
-	nl := buf.NumLines()
+	curLine, curChar := buf.GetCursor()
+	numLines := buf.NumLines()
+	tabSize := buf.GetTabSize()
 
-	cln := cl + DLine
-	if cln < 0 {
-		cln = 0
-	} else if cln >= nl {
-		cln = nl - 1
+	newLine := curLine + DLine
+	if newLine < 0 {
+		newLine = 0
+	} else if newLine >= numLines {
+		newLine = numLines - 1
 	}
 
-	ccn := cc + DChar
-	line := buf.GetLine(cln)
-	if ccn < 0 {
-		ccn = 0
-	} else if ccn > len(line) {
-		ccn = len(line)
+	curPos := 0
+	for i, r := range buf.GetLine(curLine) {
+		if i > curChar {
+			break
+		}
+		if r == '\t' {
+			curPos += tabSize
+		} else {
+			curPos++
+		}
 	}
 
-	buf.SetCursor(cln, ccn)
+	newPos := 0
+	newChar := 0
+	for _, r := range buf.GetLine(newLine) {
+		if newPos >= curPos {
+			break
+		}
+		if r == '\t' {
+			newPos += tabSize
+		} else {
+			newPos++
+		}
+		newChar++
+	}
+
+	newChar += DChar
+	if newChar > len(buf.GetLine(newLine)) {
+		newChar = len(buf.GetLine(newLine))
+	} else if newChar < 0 {
+		newChar = 0
+	}
+
+	buf.SetCursor(newLine, newChar)
 }

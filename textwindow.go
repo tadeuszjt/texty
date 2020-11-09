@@ -8,6 +8,7 @@ import (
 	"golang.org/x/image/font/gofont/gomono"
 	"golang.org/x/image/math/fixed"
 	"image"
+	"strings"
 )
 
 const (
@@ -24,13 +25,14 @@ func init() {
 }
 
 type TextWindow struct {
-	rect          geom.Rect
-	tabSize       int
-	cursorLine    int
-	cursorChar    int
-	lines         []string
-	face          font.Face
-	texID         *gfx.TexID
+	rect       geom.Rect
+	tabSize    int
+	cursorLine int
+	cursorChar int
+	scrollLine int
+	lines      []string
+	face       font.Face
+	texID      *gfx.TexID
 }
 
 func NewTextWindow(w *gfx.Win, rect geom.Rect) *TextWindow {
@@ -41,12 +43,10 @@ func NewTextWindow(w *gfx.Win, rect geom.Rect) *TextWindow {
 	})
 
 	return &TextWindow{
-		rect:       rect,
-		tabSize:    4,
-		cursorLine: 0,
-		cursorChar: 0,
-		lines:      []string{""},
-		face:       face,
+		rect:    rect,
+		tabSize: 4,
+		lines:   []string{""},
+		face:    face,
 	}
 }
 
@@ -56,8 +56,25 @@ func (t *TextWindow) Free(w *gfx.Win) {
 	}
 }
 
+func (t *TextWindow) Scroll(num int) {
+	t.scrollLine += num
+	if t.scrollLine < 0 {
+		t.scrollLine = 0
+	} else if t.scrollLine > len(t.lines) {
+		t.scrollLine = len(t.lines)
+	}
+}
+
+func (t *TextWindow) NumLinesPerPage() int {
+	return int(t.rect.Height()) / t.LineHeight()
+}
+
 func (t *TextWindow) GetLine(idx int) string {
 	return t.lines[idx]
+}
+
+func (t *TextWindow) GetTabSize() int {
+	return t.tabSize
 }
 
 func (t *TextWindow) SetLine(idx int, str string) {
@@ -94,10 +111,14 @@ func (t *TextWindow) GetRect() geom.Rect {
 
 func (t *TextWindow) SetRect(w *gfx.Win, r geom.Rect) {
 	t.rect = r
-    if t.texID != nil {
-        w.FreeTexture(*t.texID)
-        t.texID = nil
-    }
+	if t.texID != nil {
+		w.FreeTexture(*t.texID)
+		t.texID = nil
+	}
+}
+
+func (t *TextWindow) LineHeight() int {
+	return (t.face.Metrics().Ascent + t.face.Metrics().Descent).Ceil()
 }
 
 func (t *TextWindow) Redraw(w *gfx.Win) {
@@ -113,11 +134,12 @@ func (t *TextWindow) Redraw(w *gfx.Win) {
 		Dot:  fixed.Point26_6{X: 0, Y: t.face.Metrics().Ascent},
 	}
 
-	lineHeight := (t.face.Metrics().Ascent + t.face.Metrics().Descent).Ceil()
 	charWidth, _ := t.face.GlyphAdvance(' ')
+	lineHeight := t.LineHeight()
 
-	for i := range t.lines {
-		drawer.DrawString(t.lines[i])
+	for i := t.scrollLine; i < len(t.lines); i++ {
+		s := strings.ReplaceAll(t.lines[i], "\t", strings.Repeat(" ", t.tabSize))
+		drawer.DrawString(s)
 		drawer.Dot.X = 0
 		drawer.Dot.Y = drawer.Dot.Y + fixed.I(lineHeight)
 	}
@@ -130,12 +152,24 @@ func (t *TextWindow) Redraw(w *gfx.Win) {
 	}
 
 	texCanvas := w.GetTextureCanvas(*t.texID)
+	cursorPos := 0
+	for i, r := range t.GetLine(t.cursorLine) {
+		if i >= t.cursorChar {
+			break
+		}
+		if r == '\t' {
+			cursorPos += t.tabSize
+		} else {
+			cursorPos++
+		}
+	}
+
 	gfx.DrawRect(
 		texCanvas,
 		nil,
 		gfx.Colour{0, 1, 0, 0.5},
 		geom.MakeRect(
-			float32(charWidth.Mul(fixed.I(t.cursorChar)).Ceil()),
+			float32(charWidth.Mul(fixed.I(cursorPos)).Ceil()),
 			float32(lineHeight*t.cursorLine),
 			float32(charWidth.Ceil()),
 			float32(lineHeight),

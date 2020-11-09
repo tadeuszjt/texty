@@ -70,7 +70,8 @@ func cmdStr(str string) error {
 				TextBufferAppend(text, scanner.Text())
 			}
 		}
-
+	default:
+		return fmt.Errorf("invalid cmd")
 	}
 
 	return nil
@@ -97,10 +98,7 @@ func keyboard(w *gfx.Win, ev gfx.KeyEvent) {
 		case glfw.KeyBackspace:
 			TextBufferBackspace(currentWindow)
 		case glfw.KeyTab:
-			TextBufferInsertChar(currentWindow, ' ')
-			TextBufferInsertChar(currentWindow, ' ')
-			TextBufferInsertChar(currentWindow, ' ')
-			TextBufferInsertChar(currentWindow, ' ')
+			TextBufferInsertChar(currentWindow, '\t')
 		case glfw.KeyUp:
 			TextBufferMoveCursor(currentWindow, -1, 0)
 		case glfw.KeyDown:
@@ -121,6 +119,10 @@ func keyboard(w *gfx.Win, ev gfx.KeyEvent) {
 				resize(w)
 				currentWindow = text
 			}
+		case glfw.KeyPageDown:
+			text.Scroll(text.NumLinesPerPage() - 1)
+		case glfw.KeyPageUp:
+			text.Scroll(-text.NumLinesPerPage() + 1)
 		}
 	}
 }
