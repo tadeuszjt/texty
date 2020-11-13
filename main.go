@@ -8,6 +8,7 @@ import (
 	"github.com/tadeuszjt/gfx"
 	"os"
 	"strings"
+    "os/exec"
 )
 
 var (
@@ -70,6 +71,20 @@ func cmdStr(str string) error {
 				TextBufferAppend(text, scanner.Text())
 			}
 		}
+    case "ls":
+        {
+            if len(words) > 1 {
+				return fmt.Errorf("invalid cmd")
+            }
+            out, err := exec.Command("ls").Output()
+            if err != nil {
+                return err
+            }
+            TextBufferClear(text)
+            for _, s := range strings.Split(string(out), "\n") {
+                TextBufferAppend(text, s)
+            }
+        }
 	default:
 		return fmt.Errorf("invalid cmd")
 	}
@@ -140,6 +155,13 @@ func resize(w *gfx.Win) {
 }
 
 func draw(w *gfx.Win, c gfx.Canvas) {
+	if cmd != nil {
+		cmd.drawBoarder = true
+		text.drawBoarder = false
+	} else {
+		text.drawBoarder = true
+	}
+
 	text.Redraw(w)
 	text.DrawOn(c)
 

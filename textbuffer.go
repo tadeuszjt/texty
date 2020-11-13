@@ -74,20 +74,20 @@ func TextBufferMoveCursor(buf TextBuffer, DLine, DChar int) {
 		newLine = numLines - 1
 	}
 
-    curPos := charPos(buf.GetLine(curLine), curChar, tabSize)
-    newLineStr := buf.GetLine(newLine)
+	curPos := charPos(buf.GetLine(curLine), curChar, tabSize)
+	newLineStr := buf.GetLine(newLine)
 
-    newChar := 0
-    for ; newChar < len(newLineStr); newChar++ {
-        if charPos(newLineStr, newChar, tabSize) >= curPos {
-            break
-        } else if charPos(newLineStr, newChar+1, tabSize) > curPos {
-            break
-        }
-    }
+	newChar := 0
+	for ; newChar < len(newLineStr); newChar++ {
+		if charPos(newLineStr, newChar, tabSize) >= curPos {
+			break
+		} else if charPos(newLineStr, newChar+1, tabSize) > curPos {
+			break
+		}
+	}
 
 	newChar += DChar
-    if newChar > len(newLineStr) {
+	if newChar > len(newLineStr) {
 		newChar = len(newLineStr)
 	} else if newChar < 0 {
 		newChar = 0
@@ -97,17 +97,17 @@ func TextBufferMoveCursor(buf TextBuffer, DLine, DChar int) {
 }
 
 func charPos(str string, charIdx, tabSize int) int {
-    pos := 0
-    for i, r := range str {
-        if i >= charIdx {
-            break
-        }
-        if r == '\t' {
-            pos += tabSize
-        } else {
-            pos += 1
-        }
-    }
+	pos := 0
+	for i, r := range str {
+		if i >= charIdx {
+			break
+		}
+		if r == '\t' {
+			pos += tabSize
+		} else {
+			pos += 1
+		}
+	}
 
-    return pos
+	return pos
 }

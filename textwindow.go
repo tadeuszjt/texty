@@ -25,14 +25,15 @@ func init() {
 }
 
 type TextWindow struct {
-	rect       geom.Rect
-	tabSize    int
-	cursorLine int
-	cursorChar int
-	scrollLine int
-	lines      []string
-	face       font.Face
-	texID      *gfx.TexID
+	rect        geom.Rect
+	tabSize     int
+	cursorLine  int
+	cursorChar  int
+	scrollLine  int
+	lines       []string
+	face        font.Face
+	texID       *gfx.TexID
+	drawBoarder bool
 }
 
 func NewTextWindow(w *gfx.Win, rect geom.Rect) *TextWindow {
@@ -79,7 +80,6 @@ func (t *TextWindow) GetTabSize() int {
 
 func (t *TextWindow) SetLine(idx int, str string) {
 	t.lines[idx] = str
-
 }
 
 func (t *TextWindow) GetCursor() (line int, char int) {
@@ -152,17 +152,7 @@ func (t *TextWindow) Redraw(w *gfx.Win) {
 	}
 
 	texCanvas := w.GetTextureCanvas(*t.texID)
-	cursorPos := 0
-	for i, r := range t.GetLine(t.cursorLine) {
-		if i >= t.cursorChar {
-			break
-		}
-		if r == '\t' {
-			cursorPos += t.tabSize
-		} else {
-			cursorPos++
-		}
-	}
+	cursorPos := charPos(t.GetLine(t.cursorLine), t.cursorChar, t.tabSize)
 
 	gfx.DrawRect(
 		texCanvas,
@@ -170,12 +160,20 @@ func (t *TextWindow) Redraw(w *gfx.Win) {
 		gfx.Colour{0, 1, 0, 0.5},
 		geom.MakeRect(
 			float32(charWidth.Mul(fixed.I(cursorPos)).Ceil()),
-			float32(lineHeight*t.cursorLine),
+			float32(lineHeight*(t.cursorLine-t.scrollLine)),
 			float32(charWidth.Ceil()),
 			float32(lineHeight),
 		),
 		geom.RectOrigin(1, 1),
 	)
+
+	if t.drawBoarder {
+		colour := Solarized.Cyan
+		gfx.DrawRect(texCanvas, nil, colour, geom.MakeRect(0, 0, t.rect.Width(), 1), geom.RectOrigin(1, 1))
+		gfx.DrawRect(texCanvas, nil, colour, geom.MakeRect(0, t.rect.Height()-1, t.rect.Width(), 1), geom.RectOrigin(1, 1))
+		gfx.DrawRect(texCanvas, nil, colour, geom.MakeRect(0, 0, 1, t.rect.Height()), geom.RectOrigin(1, 1))
+		gfx.DrawRect(texCanvas, nil, colour, geom.MakeRect(t.rect.Width()-1, 0, 1, t.rect.Height()), geom.RectOrigin(1, 1))
+	}
 }
 
 func (t *TextWindow) DrawOn(c gfx.Canvas) {
